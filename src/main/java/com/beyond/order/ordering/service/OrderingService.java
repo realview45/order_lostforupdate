@@ -48,8 +48,8 @@ public class OrderingService {
         List<OrderingDetails> orderList = ordering.getOrderList();
         for (OrderingCreateDto dto : dtoList) {
             //동시성제어방법2. select for update통한 락설정이후 조회
-            Product product = productRepository.findByIdForUpdate(dto.getProductId()).orElseThrow(()->new EntityNotFoundException("엔티티가없습니다."));
-//            Product product = productRepository.findById(dto.getProductId()).orElseThrow(()->new EntityNotFoundException("엔티티가없습니다."));
+//            Product product = productRepository.findByIdForUpdate(dto.getProductId()).orElseThrow(()->new EntityNotFoundException("엔티티가없습니다."));
+            Product product = productRepository.findById(dto.getProductId()).orElseThrow(()->new EntityNotFoundException("엔티티가없습니다."));
             if(product.getStockQuantity()<dto.getProductCount()){//요청전부다 취소될것임구리
                 throw new IllegalArgumentException("재고가 없습니다.");
             }
