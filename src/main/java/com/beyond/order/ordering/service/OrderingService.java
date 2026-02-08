@@ -38,7 +38,8 @@ public class OrderingService {
         this.memberRepository = memberRepository;
         this.sseAlarmService = sseAlarmService;
     }
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+    //동시성이슈 해결방안1.
+//    @Transactional(isolation = Isolation.SERIALIZABLE)
     public Long create(List<OrderingCreateDto> dtoList) {
         //email을 인증객체에서 꺼내서 오더링 빌더로 만들고, 저장,
         String email = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
