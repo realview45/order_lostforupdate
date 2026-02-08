@@ -94,6 +94,7 @@ public class RedisConfig {
         container.setConnectionFactory(redisConnectionFactory);//이 레디스를 리슨하고싶어
         container.addMessageListener(messageListenerAdapter, new PatternTopic("order-channel"));
         //들어가보면 Topic이라는 채널명, MessageListen를 메시지가 처리 구독할거야
+//        만약에 여러 채널을 구독해야하는 경우, 여러개의 PatternTopic을 add하거나 별도의 Listener Bean객체 생성
         return container;
     }
 //    redis에서 수신된 메시지를 처리하는 객체
