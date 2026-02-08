@@ -52,6 +52,8 @@ public class OrderingService {
             }
             System.out.println("상품ID: " + dto.getProductId());
             System.out.println("수량: " + dto.getProductCount());
+            //200명이 조회해서 같은값을 읽어서 insert 재고빼버릴때 동시성이슈 발생
+            //이중 튕겨나가는 주문을 데드락이라고 함
             product.updateStockQuantity(dto.getProductCount());
             OrderingDetails od =
                     OrderingDetails.builder()
