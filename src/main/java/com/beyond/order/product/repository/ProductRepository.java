@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -16,5 +17,6 @@ public interface ProductRepository extends JpaRepository<Product,Long> {
     Page<Product> findAll(Specification specification, Pageable pageable);
 //    select for update
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    Optional<Product> findById(Long id);
+    @Query("select from Product p where p.id = :id")
+    Optional<Product> findByIdForUpdate(Long id);
 }
