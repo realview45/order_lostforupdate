@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>multipart-formdata</title>
+</head>
+<body>
+<!--js-->
+<form>
+    이름 : <input type="text" id="name">
+    이메일 : <input type="text" id="email">
+    프로필이미지 : <input type="file" id="fileList" multiple>
+    <button type="button" onclick="postData()"> 제출 </button>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</form>
+<script>
+    async function postData(){
+        const name = document.getElementById("name").value;
+        const email = document.getElementById("email").value;
+<!--텍스트가 아니기때문에 .value없다구리-->
+        const fileList = document.getElementById("fileList");
+
+        const serverData = new FormData();
+        serverData.append('name', name);
+        serverData.append('email', email);
+        for(let i=0;i<fileList.files.length;i++){
+<!--        profileImages가 배열이됨구리 변수명주의-->
+            serverData.append('profileImages', fileList.files[i]);
+        }
+<!--                                                           변수명주의-->
+        await axios.post("http://localhost:8081/member/multipart-formdata-images", serverData);
+    }
+</script>
+</body>
+</html>
