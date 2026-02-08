@@ -13,6 +13,8 @@ import com.beyond.order.product.domain.Product;
 import com.beyond.order.product.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -30,13 +32,15 @@ public class OrderingService {
     private final ProductRepository productRepository;
     private final MemberRepository memberRepository;
     private final SseAlarmService sseAlarmService;
+    private final RedisTemplate<String, String> redisTemplate;
     @Autowired
-    public OrderingService(OrderingRepository orderingRepository, OrderingDetailsRepository orderingDetailsRepository, ProductRepository productRepository, MemberRepository memberRepository, SseAlarmService sseAlarmService) {
+    public OrderingService(OrderingRepository orderingRepository, OrderingDetailsRepository orderingDetailsRepository, ProductRepository productRepository, MemberRepository memberRepository, SseAlarmService sseAlarmService, @Qualifier("stockInventory") RedisTemplate<String, String> redisTemplate) {
         this.orderingRepository = orderingRepository;
         this.orderingDetailsRepository = orderingDetailsRepository;
         this.productRepository = productRepository;
         this.memberRepository = memberRepository;
         this.sseAlarmService = sseAlarmService;
+        this.redisTemplate = redisTemplate;
     }
     //동시성이슈 해결방안1.
 //    @Transactional(isolation = Isolation.SERIALIZABLE)
@@ -50,14 +54,23 @@ public class OrderingService {
             //동시성제어방법2. select for update통한 락설정이후 조회
 //            Product product = productRepository.findByIdForUpdate(dto.getProductId()).orElseThrow(()->new EntityNotFoundException("엔티티가없습니다."));
             Product product = productRepository.findById(dto.getProductId()).orElseThrow(()->new EntityNotFoundException("엔티티가없습니다."));
-            if(product.getStockQuantity()<dto.getProductCount()){//요청전부다 취소될것임구리
-                throw new IllegalArgumentException("재고가 없습니다.");
+
+            //          동시성제어방법3. redis에서 재고수량 확인 및 재고수량 감소처리
+            String remain = redisTemplate.opsForValue().get(String.valueOf(dto.getProductId()));
+            int remainQuantity = Integer.parseInt(remain);
+            if(remainQuantity < dto.getProductCount()){
+                throw new IllegalArgumentException("재고가 부족합니다");
+            }else {
+                redisTemplate.opsForValue().decrement(String.valueOf(dto.getProductId()), dto.getProductCount());
             }
+            //            if(product.getStockQuantity()<dto.getProductCount()){//요청전부다 취소될것임구리
+//                throw new IllegalArgumentException("재고가 없습니다.");
+//            }
             System.out.println("상품ID: " + dto.getProductId());
             System.out.println("수량: " + dto.getProductCount());
             //200명이 조회해서 같은값을 읽어서 insert 재고빼버릴때 동시성이슈 발생
             //이중 튕겨나가는 주문을 데드락이라고 함
-            product.updateStockQuantity(dto.getProductCount());
+//            product.updateStockQuantity(dto.getProductCount());
             OrderingDetails od =
                     OrderingDetails.builder()
                             .product(productRepository.findById(dto.getProductId()).orElseThrow(()->new EntityNotFoundException("엔티티를 찾을 수 없습니다.")))
