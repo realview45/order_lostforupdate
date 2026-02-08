@@ -5,13 +5,15 @@ import com.beyond.order.common.repository.SseEmitterRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.connection.Message;
+import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 
 @Component
-public class SseAlarmService {
+public class SseAlarmService implements MessageListener {
     private final SseEmitterRegistry sseEmitterRegistry;
     private final ObjectMapper objectMapper;
     @Autowired
@@ -31,5 +33,15 @@ public class SseAlarmService {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void onMessage(Message message, byte[] pattern) {
+        String channelName = new String(pattern);
+        System.out.println("channelName:" + channelName);
+
+        // body(byte[])를 String으로 변환
+        String messageBody = new String(message.getBody());
+        System.out.println("messageBody:" + messageBody);
     }
 }
