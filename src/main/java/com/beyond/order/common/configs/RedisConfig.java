@@ -32,7 +32,7 @@ public class RedisConfig {
         configuration.setPort(port);
         configuration.setDatabase(0);
                     //구현체
-        return new LettuceConnectionFactory();
+        return new LettuceConnectionFactory(configuration);
     }
     @Bean  //인터페이스
     @Qualifier("stockInventory")
@@ -42,7 +42,7 @@ public class RedisConfig {
         configuration.setPort(port);
         configuration.setDatabase(1);
         //구현체
-        return new LettuceConnectionFactory();
+        return new LettuceConnectionFactory(configuration);
     }
 //    템플릿빈객체(자료구조 설계)
     @Bean//이 빈을 주입받아 redis에 저장할 예정

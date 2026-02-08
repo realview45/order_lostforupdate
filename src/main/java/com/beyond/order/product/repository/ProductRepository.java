@@ -16,7 +16,7 @@ import java.util.Optional;
 public interface ProductRepository extends JpaRepository<Product,Long> {
     Page<Product> findAll(Specification specification, Pageable pageable);
 //    select for update
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select from Product p where p.id = :id")
-    Optional<Product> findByIdForUpdate(Long id);
+//    @Lock(LockModeType.PESSIMISTIC_WRITE)
+//    @Query("select from Product p where p.id = :id")
+//    Optional<Product> findByIdForUpdate(Long id);
 }
