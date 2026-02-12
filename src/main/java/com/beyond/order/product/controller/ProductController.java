@@ -41,7 +41,7 @@ public class ProductController {
     //@PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC)
     @GetMapping("/list")
     public Page<ProductListDto> findAll(
-            Pageable pageable,
+            @PageableDefault(size=10,sort="id", direction = Sort.Direction.DESC) Pageable pageable,
             @ModelAttribute ProductSearchDto searchDto){
         return productService.findAll(pageable, searchDto);
     }

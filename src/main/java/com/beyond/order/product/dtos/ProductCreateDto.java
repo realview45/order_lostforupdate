@@ -26,6 +26,6 @@ public class ProductCreateDto {
     public Product toEntity(Member member) {
         return Product.builder()
                 .name(name).price(price).category(category).stockQuantity(stockQuantity).member(member)
-                .imagePath("path").build();
+                .build();
     }
 }

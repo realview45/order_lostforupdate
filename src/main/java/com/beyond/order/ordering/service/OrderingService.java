@@ -15,12 +15,14 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,19 +52,45 @@ public class OrderingService {
         Member member = memberRepository.findByEmail(email).orElseThrow(()-> new EntityNotFoundException("엔티티가 없습니다."));
         Ordering ordering = OrderingCreateDto.toEntity(member);
         List<OrderingDetails> orderList = ordering.getOrderList();
+        orderingRepository.save(ordering);//레디스쪽에서 ordering객체가 save되지않은 상태에서
         for (OrderingCreateDto dto : dtoList) {
             //동시성제어방법2. select for update통한 락설정이후 조회
 //            Product product = productRepository.findByIdForUpdate(dto.getProductId()).orElseThrow(()->new EntityNotFoundException("엔티티가없습니다."));
             Product product = productRepository.findById(dto.getProductId()).orElseThrow(()->new EntityNotFoundException("엔티티가없습니다."));
 
             //          동시성제어방법3. redis에서 재고수량 확인 및 재고수량 감소처리
-            String remain = redisTemplate.opsForValue().get(String.valueOf(dto.getProductId()));
-            int remainQuantity = Integer.parseInt(remain);
-            if(remainQuantity < dto.getProductCount()){
-                throw new IllegalArgumentException("재고가 부족합니다");
-            }else {
-                redisTemplate.opsForValue().decrement(String.valueOf(dto.getProductId()), dto.getProductCount());
+//            String remain = redisTemplate.opsForValue().get(String.valueOf(dto.getProductId()));
+//            int remainQuantity = Integer.parseInt(remain);
+//            if(remainQuantity < dto.getProductCount()){
+//                throw new IllegalArgumentException("재고가 부족합니다");
+//            }else {
+//                redisTemplate.opsForValue().decrement(String.valueOf(dto.getProductId()), dto.getProductCount());
+//            }
+
+            String key = String.valueOf(dto.getProductId());//keys[1]
+            String amount = String.valueOf(dto.getProductCount());//argv[1]
+
+            // Lua 스크립트 정의 및 실행
+            String script = "local stock = redis.call('get', KEYS[1]) " +
+                    "if stock == false then return -2 end " +
+                    "if tonumber(stock) < tonumber(ARGV[1]) then return -1 " +
+                    "else return redis.call('decrby', KEYS[1], ARGV[1]) end";
+
+            // execute(스크립트객체, 키리스트, 인자리스트)
+            Long result = redisTemplate.execute(
+                    new DefaultRedisScript<>(script, Long.class),
+                    Collections.singletonList(key),
+                    amount
+            );
+
+            if (result == -1) {
+                throw new IllegalArgumentException("재고가 부족합니다. 상품 ID: " + key);
+            } else if (result == -2) {
+                throw new EntityNotFoundException("Redis에 해당 상품 재고 정보가 없습니다. 상품 ID: " + key);
             }
+
+
+
             //            if(product.getStockQuantity()<dto.getProductCount()){//요청전부다 취소될것임구리
 //                throw new IllegalArgumentException("재고가 없습니다.");
 //            }
@@ -78,7 +106,6 @@ public class OrderingService {
                             .ordering(ordering).build();
             orderList.add(od);//cascade persist
         }
-        orderingRepository.save(ordering);
 //        주문성공시 admin 유저에게 알림메시지 전송
         String message = ordering.getId()+ "번 주문이 발생했습니다.";
         sseAlarmService.sendMessage("admin@naver.com",email, message);

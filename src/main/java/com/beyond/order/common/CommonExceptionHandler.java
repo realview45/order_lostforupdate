@@ -17,6 +17,7 @@ public class CommonExceptionHandler {
                 .status_code(404)
                 .error_message(e.getMessage())
                 .build();
+        e.printStackTrace();
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(dto);
     }
     @ExceptionHandler(IllegalArgumentException.class)
@@ -25,6 +26,7 @@ public class CommonExceptionHandler {
                 .status_code(400)
                 .error_message(e.getMessage())
                 .build();
+        e.printStackTrace();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(dto);
     }
 }

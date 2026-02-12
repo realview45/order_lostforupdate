@@ -54,7 +54,8 @@ public class JwtTokenFilter extends GenericFilter {
             Authentication authentication = new UsernamePasswordAuthenticationToken(claims.getSubject(), "", authorities);
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }catch(Exception e){
-            e.printStackTrace();
+//            실제 에러가 아닌요소들은 로그를 찍을 필요없으므로 아래프린트 주석처리 ex 권한없어도되는 API일때
+//            e.printStackTrace();
         }
         //        다시 filterChain으로 돌아가는 로직
         filterChain.doFilter(servletRequest, servletResponse);

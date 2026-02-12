@@ -21,7 +21,6 @@ public class OrderingController {
     public OrderingController(OrderingService orderingService) {
         this.orderingService = orderingService;
     }
-    @PreAuthorize("hasRole('USER')")
     @PostMapping("/create")
     public ResponseEntity<?> create(@RequestBody List<OrderingCreateDto> dtoList){
         Long id = orderingService.create(dtoList);
